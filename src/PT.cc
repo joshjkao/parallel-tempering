@@ -18,12 +18,14 @@ std::vector<Replica*> PT::construct_replicas(int L, const std::vector<double>& B
     return ret;
 }
 
+
 void PT::delete_replicas(std::vector<Replica*>& reps) {
     for (auto& r: reps) {
         delete r;
     }
     return;
 }
+
 
 std::vector<double> PT::start(int n_sweeps, std::vector<Replica*>& reps, std::mt19937_64& gen) {
     std::vector<double> p_acc(reps.size()-1, 0.);
@@ -108,7 +110,6 @@ std::vector<double> PT::verify_ave_energy(int n_sweeps, std::vector<Replica*>& r
 }
 
 
-
 double PT::expected_rt(std::vector<double> p) {
     int n = p.size()+1;
     double sum = 0;
@@ -117,3 +118,29 @@ double PT::expected_rt(std::vector<double> p) {
     }
     return n*(n-1)*sum;
 }
+
+void PT::internal_adj(std::vector<double>& B, std::mt19937_64& gen) {
+    int adj = RNG::uniform_int(gen)%(B.size()-2)+1;
+    double Bl = B[0];
+    double Br = B[B.size()-1];
+
+    B[adj] = RNG::zero_one_double(gen) * (Br-Bl) + Bl;
+    sort(B.begin(), B.end());
+}
+
+
+void PT::insertion(std::vector<double>& B, std::mt19937_64& gen) {
+    if (B.size() < 3) return;
+    int ins = RNG::uniform_int(gen)%(B.size()-1)+1;
+    double Bl = B[ins-1];
+    double Br = B[ins];
+    double Bnew = RNG::zero_one_double(gen) * (Br-Bl) + Bl;
+    B.insert(B.begin()+ins, Bnew);
+}
+
+
+void PT::deletion(std::vector<double>& B, std::mt19937_64& gen) {
+    int rem = RNG::uniform_int(gen)%(B.size()-2)+1;
+    B.erase(B.begin()+rem);
+}
+    

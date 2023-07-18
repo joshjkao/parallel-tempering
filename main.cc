@@ -24,15 +24,17 @@ int main(int argc, char** argv) {
 
     // vector<double> T = {0.10,1.40,1.65,1.85,2.04,2.18,2.26,2.27,2.28,2.29,2.32,2.37,2.44,2.55,2.70,2.90,3.25,3.70,4.60,6.20,10.0}; // opt
     // vector<double> T = {0.10,0.13,0.16,0.20,0.25,0.32,0.40,0.50,0.63,0.79,1.00,1.26,1.58,2.00,2.51,3.16,3.98,5.01,6.31,7.94,10.0};
-    vector<double> T = {10,4,2,1.1,.1};
+    // vector<double> T = {10,4,2,1.1,.1};
+    // vector<double> T = {1/0.1,1/0.379576,1/0.406646,1/0.518733,1/10.};
+    vector<double> T = {1/0.1,1,1/10.};
     // vector<double> B = {.1, 1, 2, 5};
     vector<double> B;
     for (auto& t: T) {
-        B.push_back(1/t);
+        B.push_back(pow(t, -1));
     }
 
-    int n_sweeps = 1e5;
-    int L = 3;
+    const int n_sweeps = 1e5;
+    const int L = 8;
 
     int n_reps = B.size();
 
@@ -46,7 +48,7 @@ int main(int argc, char** argv) {
         auto reset = PT::construct_replicas(L, B, engine);
         tau = PT::expected_rt(PT::start(n_sweeps, reset, engine));
         PT::delete_replicas(reset);
-        cout << tau << endl;
+        cout << tau << " ------ " << B;
 
         int i = 0;
         #pragma omp parallel for
@@ -62,16 +64,22 @@ int main(int argc, char** argv) {
                 gen.seed(distribution(engine));
             }
 
-            
-
-            // adjust 1 beta value in new array, update Bcpy
-            int adj = RNG::uniform_int(gen)%(Bcpy.size()-2)+1;
-            // cout << adj << " ";
-            double Bl = Bcpy[0];
-            double Br = Bcpy[n_reps-1];
-            Bcpy[adj] = RNG::zero_one_double(gen) * (Br-Bl) + Bl;
-
-            sort(Bcpy.begin(), Bcpy.end());
+            // adjust 1 beta value in new array
+            auto op = RNG::pick_op(gen);
+            switch (op) {
+                case 0: {
+                    PT::insertion(Bcpy, gen);
+                    break;
+                }
+                case 1: {
+                    PT::deletion(Bcpy, gen);
+                    break;
+                }
+                default: {
+                    PT::internal_adj(Bcpy, gen);
+                    break;
+                }
+            }
 
             // construct replica array
             auto reps = PT::construct_replicas(L, Bcpy, gen);
