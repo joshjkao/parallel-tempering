@@ -1,5 +1,6 @@
 #include "PT.hh"
 #include "util.hh"
+#include "RNG.hh"
 
 #include <cmath>
 #include <climits>
@@ -9,7 +10,22 @@
 #include <float.h>
 
 
-std::vector<double> PT::start(int n_sweeps, std::vector<Replica*>& reps) {
+std::vector<Replica*> PT::construct_replicas(int L, const std::vector<double>& B, std::mt19937_64& gen) {
+    std::vector<Replica*> ret;
+    for (auto& b: B) {
+        ret.push_back(new IsingFerromagnetReplica(L, b, &gen));
+    }
+    return ret;
+}
+
+void PT::delete_replicas(std::vector<Replica*>& reps) {
+    for (auto& r: reps) {
+        delete r;
+    }
+    return;
+}
+
+std::vector<double> PT::start(int n_sweeps, std::vector<Replica*>& reps, std::mt19937_64& gen) {
     std::vector<double> p_acc(reps.size()-1, 0.);
     std::vector<double> variance_acc(reps.size()-1, 0.);
 
@@ -28,7 +44,7 @@ std::vector<double> PT::start(int n_sweeps, std::vector<Replica*>& reps) {
                 double dB = reps[j+1]->B - reps[j]->B;
                 double dE = reps[j+1]->cost - reps[j]->cost;
                 double A = std::min(1., exp(dB*dE));
-                if ((double)rand()/INT_MAX < A) {
+                if (RNG::zero_one_double(gen) < A) {
                     std::swap(reps[j], reps[j+1]);
                     std::swap(reps[j]->B, reps[j+1]->B);
                     ++p_acc[j];

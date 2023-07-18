@@ -1,4 +1,5 @@
 #include "Replica.hh"
+#include "RNG.hh"
 #include <random>
 #include <iostream>
 #include <algorithm>
@@ -6,16 +7,16 @@
 #include <climits>
 
 
-IsingFerromagnetReplica::IsingFerromagnetReplica(int L_, double B_):
-Replica(), L(L_)
+IsingFerromagnetReplica::IsingFerromagnetReplica(int L_, double B_, std::mt19937_64* gen_):
+Replica(), L(L_), gen(gen_)
 {
     lattice = std::vector< std::vector<int> >(L_, std::vector<int>(L_, 0));
     pick_order = std::vector<int>(L_*L_, 0);
     Ldecr = std::vector<int>(L, 0);
     Lincr = std::vector<int>(L, 0);
     cost = 0;
-    Init();
     B = B_;
+    Init();
 }
 
 IsingFerromagnetReplica::~IsingFerromagnetReplica() {
@@ -31,10 +32,7 @@ void IsingFerromagnetReplica::Init() {
     unsigned int i = 0;
     for (auto& row: lattice) {
         for (auto& s: row) {
-            s = rand() % 2;
-            if (s == 0) {
-                s = -1;
-            }
+            s = (RNG::zero_one_int(*gen) == 0) ? -1 : 1;
             pick_order[i] = i;
             ++i;
         }
@@ -56,13 +54,13 @@ int IsingFerromagnetReplica::Cost() {
 
 void IsingFerromagnetReplica::Update() {
 // Perform sweep to evolve replica
-    std::random_shuffle(pick_order.begin(), pick_order.end());
+    std::shuffle(pick_order.begin(), pick_order.end(), *gen);
     for (auto& x: pick_order) {
         int i = x/L;
         int j = x%L;
         int contr = (lattice)[i][j] * ((lattice)[i][Lincr[j]] + (lattice)[i][Ldecr[j]] + (lattice)[Ldecr[i]][j] + (lattice)[Lincr[i]][j]);
         double A = std::min(1., exp(-B * (2*contr)));
-        if ((double)rand()/(double)INT_MAX < A) {
+        if (RNG::zero_one_double(*gen) < A) {
             cost += 2*contr;
             (lattice)[i][j] *= -1;
         }
