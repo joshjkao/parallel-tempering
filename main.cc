@@ -7,6 +7,7 @@
 #include <random>
 #include <cmath>
 #include <climits>
+#include <algorithm>
 #include <chrono>
 #include <fstream>
 #include <float.h>
@@ -23,7 +24,7 @@ int main(int argc, char** argv) {
 
     // vector<double> T = {0.10,1.40,1.65,1.85,2.04,2.18,2.26,2.27,2.28,2.29,2.32,2.37,2.44,2.55,2.70,2.90,3.25,3.70,4.60,6.20,10.0}; // opt
     // vector<double> T = {0.10,0.13,0.16,0.20,0.25,0.32,0.40,0.50,0.63,0.79,1.00,1.26,1.58,2.00,2.51,3.16,3.98,5.01,6.31,7.94,10.0};
-    vector<double> T = {0.10, 1.1, 2, 4, 10};
+    vector<double> T = {10,4,2,1.1,.1};
     // vector<double> B = {.1, 1, 2, 5};
     vector<double> B;
     for (auto& t: T) {
@@ -31,7 +32,7 @@ int main(int argc, char** argv) {
     }
 
     int n_sweeps = 1e5;
-    int L = 10;
+    int L = 3;
 
     int n_reps = B.size();
 
@@ -43,7 +44,9 @@ int main(int argc, char** argv) {
         for (int j =0; j < n_reps; ++j) {
             reset[j] = new IsingFerromagnetReplica(L, B[j]);
         }
-        tau = PT::expected_rt(PT::start(n_sweeps, reset));
+        auto temp = PT::start(n_sweeps, reset);
+        tau = PT::expected_rt(temp);
+        cout << B;
         for (auto& res: reset) {
             delete res;
         }
@@ -63,9 +66,11 @@ int main(int argc, char** argv) {
             // adjust 1 beta value in new array, update Bcpy
             int adj = rand()%(n_reps-2)+1;
             // cout << adj << " ";
-            double Bl = Bcpy[adj-1];
-            double Br = Bcpy[adj+1];
+            double Bl = Bcpy[0];
+            double Br = Bcpy[n_reps-1];
             Bcpy[adj] = (double)rand()/INT_MAX * (Br-Bl) + Bl;
+
+            sort(Bcpy.begin(), Bcpy.end());
 
             // construct replica array
             vector<Replica*> reps(n_reps, nullptr);
@@ -100,6 +105,8 @@ int main(int argc, char** argv) {
     for (int j = 0; j < n_reps; ++j) {
         T[j] = 1/B[j];
     }
+
+    cout << T << endl;
 
     write_to_file(T, p, "output.csv");
 
