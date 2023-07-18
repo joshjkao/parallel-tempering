@@ -1,5 +1,6 @@
 #pragma once
 #include <vector>
+#include <random>
 
 class Replica {
     public:
@@ -18,7 +19,7 @@ class Replica {
 
 class IsingFerromagnetReplica: public Replica {
     public:
-        IsingFerromagnetReplica(int L_, double B_);
+        IsingFerromagnetReplica(int L_, double B_, std::mt19937_64* gen_);
         ~IsingFerromagnetReplica();
 
         void Init();
@@ -28,13 +29,15 @@ class IsingFerromagnetReplica: public Replica {
         void Dump();
 
         unsigned int L;
-        std::vector<std::vector<int>> lattice;    
+        std::vector<std::vector<int>> lattice;
 
     private:
         inline int arithmod(int i);
         std::vector<int> pick_order;
         std::vector<int> Ldecr;
         std::vector<int> Lincr;
+
+        std::mt19937_64* gen;
 };
 
 int IsingFerromagnetReplica::arithmod(int i) {
