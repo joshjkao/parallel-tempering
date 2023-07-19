@@ -1,5 +1,6 @@
 #pragma once
 #include <random>
+#include "pcg/pcg_random.hpp"
 
 class RNG {
     public:

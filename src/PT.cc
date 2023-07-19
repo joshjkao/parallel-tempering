@@ -1,6 +1,7 @@
 #include "PT.hh"
 #include "util.hh"
 #include "RNG.hh"
+#include "pcg/pcg_random.hpp"
 
 #include <cmath>
 #include <climits>
@@ -10,7 +11,7 @@
 #include <float.h>
 
 
-std::vector<Replica*> PT::construct_replicas(int L, const std::vector<double>& B, std::mt19937_64& gen) {
+std::vector<Replica*> PT::construct_replicas(int L, const std::vector<double>& B, pcg32& gen) {
     std::vector<Replica*> ret;
     for (auto& b: B) {
         ret.push_back(new IsingFerromagnetReplica(L, b, &gen));
@@ -27,7 +28,7 @@ void PT::delete_replicas(std::vector<Replica*>& reps) {
 }
 
 
-std::vector<double> PT::start(int n_sweeps, std::vector<Replica*>& reps, std::mt19937_64& gen) {
+std::vector<double> PT::start(int n_sweeps, std::vector<Replica*>& reps, pcg32& gen) {
     std::vector<double> p_acc(reps.size()-1, 0.);
     std::vector<double> variance_acc(reps.size()-1, 0.);
 
@@ -45,8 +46,8 @@ std::vector<double> PT::start(int n_sweeps, std::vector<Replica*>& reps, std::mt
             for (unsigned int j = 0; j < reps.size()-1; ++j) {
                 double dB = reps[j+1]->B - reps[j]->B;
                 double dE = reps[j+1]->cost - reps[j]->cost;
-                double A = std::min(1., exp(dB*dE));
-                if (RNG::zero_one_double(gen) < A) {
+                // double A = std::min(1., exp(dB*dE));
+                if (dB*dE > 0. || RNG::zero_one_double(gen) < exp(dB*dE)) {
                     std::swap(reps[j], reps[j+1]);
                     std::swap(reps[j]->B, reps[j+1]->B);
                     ++p_acc[j];
@@ -60,19 +61,6 @@ std::vector<double> PT::start(int n_sweeps, std::vector<Replica*>& reps, std::mt
             mean_i[j] /= step_size;
             variance_acc[j] += pow(mean_total[j]-mean_i[j], 2);
         }
-        
-        
-        // bool stop = true;
-        // for (unsigned int j = 0; j < variance_acc.size(); ++j) {
-            // if (i != 0 && variance_acc[j]/p_acc[j] > 1.05e-6) stop = false;
-        // }
-
-        // if (stop && i != 0) {
-        //     for (auto& p: p_acc) {
-        //         p/=(i+1)*step_size;
-        //     }
-        //     return p_acc;
-        // }
 
     }
 
@@ -119,7 +107,7 @@ double PT::expected_rt(std::vector<double> p) {
     return n*(n-1)*sum;
 }
 
-void PT::internal_adj(std::vector<double>& B, std::mt19937_64& gen) {
+void PT::internal_adj(std::vector<double>& B, pcg32& gen) {
     int adj = RNG::uniform_int(gen)%(B.size()-2)+1;
     double Bl = B[0];
     double Br = B[B.size()-1];
@@ -129,7 +117,7 @@ void PT::internal_adj(std::vector<double>& B, std::mt19937_64& gen) {
 }
 
 
-void PT::insertion(std::vector<double>& B, std::mt19937_64& gen) {
+void PT::insertion(std::vector<double>& B, pcg32& gen) {
     if (B.size() < 3) return;
     int ins = RNG::uniform_int(gen)%(B.size()-1)+1;
     double Bl = B[ins-1];
@@ -139,7 +127,7 @@ void PT::insertion(std::vector<double>& B, std::mt19937_64& gen) {
 }
 
 
-void PT::deletion(std::vector<double>& B, std::mt19937_64& gen) {
+void PT::deletion(std::vector<double>& B, pcg32& gen) {
     int rem = RNG::uniform_int(gen)%(B.size()-2)+1;
     B.erase(B.begin()+rem);
 }
