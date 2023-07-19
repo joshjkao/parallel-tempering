@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include <random>
+#include "pcg/pcg_random.hpp"
 
 class Replica {
     public:
@@ -19,7 +20,7 @@ class Replica {
 
 class IsingFerromagnetReplica: public Replica {
     public:
-        IsingFerromagnetReplica(int L_, double B_, std::mt19937_64* gen_);
+        IsingFerromagnetReplica(int L_, double B_, pcg32* gen_);
         ~IsingFerromagnetReplica();
 
         void Init();
@@ -33,11 +34,12 @@ class IsingFerromagnetReplica: public Replica {
 
     private:
         inline int arithmod(int i);
+        inline double int_exp(int x);
         std::vector<int> pick_order;
         std::vector<int> Ldecr;
         std::vector<int> Lincr;
 
-        std::mt19937_64* gen;
+        pcg32* gen;
 };
 
 int IsingFerromagnetReplica::arithmod(int i) {

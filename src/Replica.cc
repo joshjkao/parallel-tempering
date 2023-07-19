@@ -1,5 +1,6 @@
 #include "Replica.hh"
 #include "RNG.hh"
+#include "pcg/pcg_random.hpp"
 #include <random>
 #include <iostream>
 #include <algorithm>
@@ -7,7 +8,7 @@
 #include <climits>
 
 
-IsingFerromagnetReplica::IsingFerromagnetReplica(int L_, double B_, std::mt19937_64* gen_):
+IsingFerromagnetReplica::IsingFerromagnetReplica(int L_, double B_, pcg32* gen_):
 Replica(), L(L_), gen(gen_)
 {
     lattice = std::vector< std::vector<int> >(L_, std::vector<int>(L_, 0));
@@ -59,8 +60,8 @@ void IsingFerromagnetReplica::Update() {
         int i = x/L;
         int j = x%L;
         int contr = (lattice)[i][j] * ((lattice)[i][Lincr[j]] + (lattice)[i][Ldecr[j]] + (lattice)[Ldecr[i]][j] + (lattice)[Lincr[i]][j]);
-        double A = std::min(1., exp(-B * (2*contr)));
-        if (RNG::zero_one_double(*gen) < A) {
+        // double A = std::min(1., exp(-B * (2*contr)));
+        if (contr < 0. || RNG::zero_one_double(*gen) < exp(-B * 2*contr)) {
             cost += 2*contr;
             (lattice)[i][j] *= -1;
         }
