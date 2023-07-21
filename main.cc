@@ -20,35 +20,56 @@ using namespace std::chrono;
 
 
 int main(int argc, char** argv) {
-    cout << "starting program" << endl;
-    auto start = high_resolution_clock::now();
-
     // vector<double> T = {0.10,1.40,1.65,1.85,2.04,2.18,2.26,2.27,2.28,2.29,2.32,2.37,2.44,2.55,2.70,2.90,3.25,3.70,4.60,6.20,10.0}; // opt
     // vector<double> T = {0.10,0.13,0.16,0.20,0.25,0.32,0.40,0.50,0.63,0.79,1.00,1.26,1.58,2.00,2.51,3.16,3.98,5.01,6.31,7.94,10.0};
     vector<double> T = {.1,.6, 1, 2, 5};
+    const int L = 9;
 
+    cout << "starting optimization with T = " << T << "and L = " << L << endl;
+
+    // convert to inverse temperature
     vector<double> B;
     for (auto& t: T) {
         B.push_back(pow(t, -1));
     }
-
-    const int n_sweeps = 1e6;
-    const int L = 9;
-
     int n_reps = B.size();
-
+    
+    // return variables
     vector<double> p;
     double tau = DBL_MAX;
 
-
-    unsigned int seed = time(0);
+    // RNG setup
+    unsigned int seed = 0;
     pcg32 main_engine(seed);
     pcg32 local_engine(0);
 
+    // max number of MC sweeps before timing out PT
+    const int n_sweeps = 1e6;
+
+    // number of optimization steps before recalculating tau
+    const int n_adj = 200;
+
+    // max number of resets before timing out optimization
+    const int n_reset = 20;
+
+    // ratio of failed to total adjustments to terminate
+    const double fail_ratio = .75;
+
+    // stop condition variables
     int failed_iterations = 0;
-    
     int r;
-    for (r = 0; r < 20; ++r) {
+
+    // multithreading
+    int n_threads = 1;
+    #ifdef USE_MULTITHREADING
+    n_threads = omp_get_max_threads();
+    #endif
+
+    // timing
+    auto start = high_resolution_clock::now();
+
+    for (r = 0; r < n_reset; ++r) {
+        // 
         auto reset = PT::construct_replicas(L, B, main_engine);
         p = PT::start(n_sweeps, reset, main_engine);
         tau = PT::expected_rt(p);
@@ -57,8 +78,8 @@ int main(int argc, char** argv) {
         cout << p << endl;
 
         int i = 0;
-        #pragma omp parallel for firstprivate(local_engine) num_threads(4)
-        for (i = 0; i < 200; ++i) {
+        #pragma omp parallel for firstprivate(local_engine) num_threads(1)
+        for (i = 0; i < n_adj; ++i) {
 
             // create a copy of the current best arrangement, only 1 thread at once
             vector<double> Bcpy;
@@ -94,12 +115,12 @@ int main(int argc, char** argv) {
                 else ++failed_iterations;
             }
         }
-        if (failed_iterations > i*200*.75) {
+        if (failed_iterations > i*n_adj*fail_ratio) {
             cout << "terminated early\n";
             break;
         }
     }
-    if (r == 20) cout << "reached maxed optimizing iterations\n";
+    if (r == n_reset) cout << "reached maxed optimizing iterations\n";
 
 
     cout << endl << B << p << tau << endl;
