@@ -55,7 +55,7 @@ std::vector<double> PT::start(int n_sweeps, std::vector<Replica*>& reps, pcg32& 
             bool terminate = true;
             for (unsigned int k = 0; k < p.size(); ++k) {
                 p[k] = (double)count_acc[k]/i;
-                if (abs(p[k]-old_p[k])/p[k] > .001) terminate = false;
+                if (abs(p[k]-old_p[k])/p[k] > .0005) terminate = false;
                 old_p[k] = p[k];
             }
             if (terminate) {
@@ -108,6 +108,7 @@ double PT::expected_rt(std::vector<double> p) {
 }
 
 void PT::internal_adj(std::vector<double>& B, pcg32& gen) {
+    if (B.size() < 3) return;
     int adj = RNG::uniform_int(gen)%(B.size()-2)+1;
     double Bl = B[0];
     double Br = B[B.size()-1];
@@ -118,7 +119,6 @@ void PT::internal_adj(std::vector<double>& B, pcg32& gen) {
 
 
 void PT::insertion(std::vector<double>& B, pcg32& gen) {
-    if (B.size() < 3) return;
     int ins = RNG::uniform_int(gen)%(B.size()-1)+1;
     double Bl = B[ins-1];
     double Br = B[ins];
@@ -128,6 +128,7 @@ void PT::insertion(std::vector<double>& B, pcg32& gen) {
 
 
 void PT::deletion(std::vector<double>& B, pcg32& gen) {
+    if (B.size() < 3) return;
     int rem = RNG::uniform_int(gen)%(B.size()-2)+1;
     B.erase(B.begin()+rem);
 }
