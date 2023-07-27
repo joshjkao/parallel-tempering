@@ -1,4 +1,8 @@
 .vscode
 run
+run.exe
 test
 output.csv
+processing.ipynb
+**/**.txt
+**/**.bat

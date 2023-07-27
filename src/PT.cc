@@ -29,46 +29,46 @@ void PT::delete_replicas(std::vector<Replica*>& reps) {
 
 
 std::vector<double> PT::start(int n_sweeps, std::vector<Replica*>& reps, pcg32& gen) {
-    std::vector<double> p_acc(reps.size()-1, 0.);
-    std::vector<double> variance_acc(reps.size()-1, 0.);
+    std::vector<unsigned int> count_acc(reps.size()-1, 0.);
+    std::vector<double> old_p(reps.size()-1, 0.);
+    std::vector<double> p(reps.size()-1, 0.);
 
-    int step_size = 1e3;
+    int step_size = 100;
 
-    for (int i = 0; i < n_sweeps/step_size; ++i) {
-        // std::cout << "Event " << i*step_size << " starts\n"; 
-        std::vector<double> mean_i(reps.size()-1, 0.);
-        for (int j = 0; j < step_size; ++j) {
-            // #pragma omp parallel for schedule(static)
-            for (auto& rep: reps) {
-                rep->Update();
-            }
-
-            for (unsigned int j = 0; j < reps.size()-1; ++j) {
-                double dB = reps[j+1]->B - reps[j]->B;
-                double dE = reps[j+1]->cost - reps[j]->cost;
-                // double A = std::min(1., exp(dB*dE));
-                if (dB*dE > 0. || RNG::zero_one_double(gen) < exp(dB*dE)) {
-                    std::swap(reps[j], reps[j+1]);
-                    std::swap(reps[j]->B, reps[j+1]->B);
-                    ++p_acc[j];
-                    ++mean_i[j];
-                }
-            }
+    std::vector<double> mean_i(reps.size()-1, 0.);
+    for (int i = 1; i < n_sweeps+1; ++i) {
+        for (auto& rep: reps) {
+            rep->Update();
         }
-        std::vector<double> mean_total;
+
         for (unsigned int j = 0; j < reps.size()-1; ++j) {
-            mean_total.push_back(p_acc[j]/((i+1)*step_size));
-            mean_i[j] /= step_size;
-            variance_acc[j] += pow(mean_total[j]-mean_i[j], 2);
+            double dB = reps[j+1]->B - reps[j]->B;
+            double dE = reps[j+1]->cost - reps[j]->cost;
+            if (dB*dE > 0. || RNG::zero_one_double(gen) < exp(dB*dE)) {
+                std::swap(reps[j], reps[j+1]);
+                std::swap(reps[j]->B, reps[j+1]->B);
+                ++count_acc[j];
+            }
         }
 
+        if (!(i%step_size)) {
+            bool terminate = true;
+            for (unsigned int k = 0; k < p.size(); ++k) {
+                p[k] = (double)count_acc[k]/i;
+                if (abs(p[k]-old_p[k])/p[k] > .0005) terminate = false;
+                old_p[k] = p[k];
+            }
+            if (terminate) {
+                return p;
+            }
+        }
     }
 
-    for (auto& p: p_acc) {
-        p/=n_sweeps;
+    for (unsigned int k = 0; k < p.size(); ++k) {
+        p[k] = (double)count_acc[k]/n_sweeps;
     }
-    // std::cout << "WARNING: reached maxed MC iterations" << std::endl;
-    return p_acc;
+    std::cout << "reached max MC iterations\n";
+    return p;
 }
 
 
@@ -108,6 +108,7 @@ double PT::expected_rt(std::vector<double> p) {
 }
 
 void PT::internal_adj(std::vector<double>& B, pcg32& gen) {
+    if (B.size() < 3) return;
     int adj = RNG::uniform_int(gen)%(B.size()-2)+1;
     double Bl = B[0];
     double Br = B[B.size()-1];
@@ -118,7 +119,6 @@ void PT::internal_adj(std::vector<double>& B, pcg32& gen) {
 
 
 void PT::insertion(std::vector<double>& B, pcg32& gen) {
-    if (B.size() < 3) return;
     int ins = RNG::uniform_int(gen)%(B.size()-1)+1;
     double Bl = B[ins-1];
     double Br = B[ins];
@@ -128,6 +128,7 @@ void PT::insertion(std::vector<double>& B, pcg32& gen) {
 
 
 void PT::deletion(std::vector<double>& B, pcg32& gen) {
+    if (B.size() < 3) return;
     int rem = RNG::uniform_int(gen)%(B.size()-2)+1;
     B.erase(B.begin()+rem);
 }
