@@ -26,7 +26,7 @@ int main(int argc, char** argv) {
     // vector<double> T = {.1,1.905,2.386,3.12,5};
     vector<double> T = {.1, 10};
     // 0.2,0.320761,0.418838,0.525278,10
-    const int L = 7;
+    const int L = 10;
 
     cout << "starting optimization with T = " << T << "and L = " << L << endl;
 
@@ -40,7 +40,7 @@ int main(int argc, char** argv) {
     
     // return variables
     vector<double> p;
-    double tau = DBL_MAX;
+    double tau = INFINITY;
 
     // RNG setup
     unsigned int seed = time(0);
@@ -61,6 +61,9 @@ int main(int argc, char** argv) {
 
     // highest fraction of old/new mavg to continue the loop
     const double fail_threshold = .01;
+
+    // exponential mavg constant
+    const double alpha = .20;
 
     // minimum number of consecutive failed updates to break the loop
     const int min_fails = 10;
@@ -148,7 +151,7 @@ int main(int argc, char** argv) {
             else if (mavg == 0.) mavg = tau_this_n;
             else {
                 auto old_mavg = mavg;
-                mavg = mavg*(1-.18) + tau_this_n*.18;
+                mavg = mavg*(1-alpha) + tau_this_n*alpha;
                 cout << mavg << endl;
                 mavgout << mavg << "            " << B_this_n;
                 if ((mavg - old_mavg)/old_mavg < fail_threshold) ++stop_counter;
@@ -156,7 +159,7 @@ int main(int argc, char** argv) {
             }
         }
         if (r == n_reset) cout << "reached max optimizing iterations\n";
-        if (tau_this_n < tau) {
+        if (tau_this_n <= tau) {
             tau = tau_this_n;
             B = B_best = B_this_n;
             p = p_this_n;
