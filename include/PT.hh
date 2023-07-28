@@ -8,15 +8,16 @@ class PT {
     PT(const PT& other);
     PT& operator=(const PT& rhs);
     ~PT();
+    void Seed(unsigned int seed);
 
-    void Adjustment();
-    void Insertion();
-    void Deletion();
+    void Adjustment(pcg32& main_eng);
+    void Insertion(pcg32& main_eng);
+    void Deletion(pcg32& main_eng);
 
     std::vector<double> Start(unsigned int n_sweeps);
-    double Expected_RT();
+    static double Expected_RT(const std::vector<double>& p);
+    std::vector<double> GetBetas();
 
     std::vector<IsingFerromagnetReplica*> reps;
     pcg32 eng;
-    
 };

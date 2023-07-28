@@ -29,8 +29,9 @@ PT::PT(const PT& other) {
     }
 }
 
+
 PT& PT::operator=(const PT& rhs) {
-    eng = rhs.eng;
+    eng = pcg32(rhs.eng);
     for (auto& r: reps) {
         delete r;
     }
@@ -41,6 +42,7 @@ PT& PT::operator=(const PT& rhs) {
     return *this;
 }
 
+
 PT::~PT() {
     for (auto& rep: reps) {
         delete rep;
@@ -48,12 +50,17 @@ PT::~PT() {
 }
 
 
+void PT::Seed(unsigned int seed) {
+    eng.seed(seed);
+}
+
+
 std::vector<double> PT::Start(unsigned int n_sweeps) {
     std::vector<unsigned int> count_acc(reps.size()-1, 0.);
-    std::vector<double> old_p(reps.size()-1, 0.);
     std::vector<double> p(reps.size()-1, 0.);
+    double rt = INFINITY;
 
-    int step_size = 100;
+    unsigned int step_size = 10000;
 
     std::vector<double> mean_i(reps.size()-1, 0.);
     for (unsigned int i = 1; i < n_sweeps+1; ++i) {
@@ -71,17 +78,17 @@ std::vector<double> PT::Start(unsigned int n_sweeps) {
             }
         }
 
-        // if (!(i%step_size)) {
-        //     bool terminate = true;
-        //     for (unsigned int k = 0; k < p.size(); ++k) {
-        //         p[k] = (double)count_acc[k]/i;
-        //         if (abs(p[k]-old_p[k])/p[k] > .0005) terminate = false;
-        //         old_p[k] = p[k];
-        //     }
-        //     if (terminate) {
-        //         return p;
-        //     }
-        // }
+        if (i == step_size) {
+            for (unsigned int k = 0; k < p.size(); ++k) {
+                p[k] = (double)count_acc[k]/i;
+            }
+            double rt_new = PT::Expected_RT(p);
+            if ((rt-rt_new)/rt_new < 0.001 || (rt == INFINITY && rt_new == INFINITY)) {
+                return p;
+            }
+            rt = rt_new;
+            step_size = step_size*2;
+        }
     }
 
     for (unsigned int k = 0; k < p.size(); ++k) {
@@ -92,23 +99,50 @@ std::vector<double> PT::Start(unsigned int n_sweeps) {
 }
 
 
-double PT::Expected_RT() {
-    return 0.;
+double PT::Expected_RT(const std::vector<double>& p) {
+    double inv_sum = 0.;
+    int n = p.size()+1;
+    for (auto& i: p) {
+        inv_sum += 1./i;
+    }
+    return n*(n-1)*inv_sum;
+}
+
+
+std::vector<double> PT::GetBetas() {
+    std::vector<double> ret;
+    for (auto& r: reps) {
+        ret.push_back(r->B);
+    }
+    return ret;
 }
 
 
 
-void PT::Adjustment() {
+void PT::Adjustment(pcg32& main_eng) {
+    if (reps.size() < 3) return;
+    int i = RNG::uniform_int(main_eng)%(reps.size()-2) + 1;
+    double l = reps[i-1]->B;
+    double r = reps[i+1]->B;
+    double b_new = RNG::zero_one_double(main_eng) * (r-l) + l;
+    reps[i]->B = b_new;
     return;
 }
 
 
-void PT::Insertion() {
+void PT::Insertion(pcg32& main_eng) {
+    int i = RNG::uniform_int(main_eng)%(reps.size()-2) + 1;
+    double l = reps[i-1]->B;
+    double r = reps[i]->B;
+    double b_new = RNG::zero_one_double(main_eng) * (r-l) + l;
+    int L = reps[0]->L;
+    auto r_new = new IsingFerromagnetReplica(L, b_new);
+    reps.insert(reps.begin()+i, r_new);
     return;
 }
 
 
-void PT::Deletion() {
+void PT::Deletion(pcg32& main_eng) {
     return;
 }
     
