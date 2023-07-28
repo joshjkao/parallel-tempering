@@ -6,11 +6,12 @@
 class Replica {
     public:
         Replica() = default;
+        Replica(const Replica& other) = default;
         virtual ~Replica() = default;
 
-        virtual void Init() = 0;
+        virtual void Init(pcg32& eng) = 0;
         virtual int Cost() = 0;
-        virtual void Update() = 0;
+        virtual void Update(pcg32& eng) = 0;
 
         virtual void Dump() {}
 
@@ -20,12 +21,12 @@ class Replica {
 
 class IsingFerromagnetReplica: public Replica {
     public:
-        IsingFerromagnetReplica(int L_, double B_, pcg32* gen_);
+        IsingFerromagnetReplica(int L_, double B_);
         ~IsingFerromagnetReplica();
 
-        void Init();
+        void Init(pcg32& eng);
         int Cost();
-        void Update();
+        void Update(pcg32& eng);
 
         void Dump();
 
@@ -38,8 +39,7 @@ class IsingFerromagnetReplica: public Replica {
         std::vector<int> pick_order;
         std::vector<int> Ldecr;
         std::vector<int> Lincr;
-
-        pcg32* gen;
+        
 };
 
 int IsingFerromagnetReplica::arithmod(int i) {
