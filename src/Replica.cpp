@@ -1,5 +1,5 @@
-#include "Replica.hh"
-#include "RNG.hh"
+#include "Replica.h"
+#include "RNG.h"
 #include "pcg/pcg_random.hpp"
 #include <random>
 #include <iostream>

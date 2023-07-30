@@ -1,6 +1,6 @@
-#include "PT.hh"
-#include "util.hh"
-#include "RNG.hh"
+#include "PT.h"
+#include "util.h"
+#include "RNG.h"
 #include "pcg/pcg_random.hpp"
 
 #include <cmath>
@@ -60,10 +60,12 @@ std::vector<double> PT::Start(unsigned int n_sweeps) {
     std::vector<double> p(reps.size()-1, 0.);
     double rt = INFINITY;
 
-    unsigned int step_size = 10000;
+    unsigned int min_sweeps = 10000;
+    unsigned int step_size = 1000;
+    unsigned int next_check = min_sweeps + step_size;
 
     std::vector<double> mean_i(reps.size()-1, 0.);
-    for (unsigned int i = 1; i < n_sweeps+1; ++i) {
+    for (unsigned int i = 0; i < n_sweeps; ++i) {
         for (auto& rep: reps) {
             rep->Update(eng);
         }
@@ -78,7 +80,7 @@ std::vector<double> PT::Start(unsigned int n_sweeps) {
             }
         }
 
-        if (i == step_size) {
+        if (i == next_check) {
             for (unsigned int k = 0; k < p.size(); ++k) {
                 p[k] = (double)count_acc[k]/i;
             }
@@ -88,6 +90,7 @@ std::vector<double> PT::Start(unsigned int n_sweeps) {
             }
             rt = rt_new;
             step_size = step_size*2;
+            next_check = min_sweeps + step_size;
         }
     }
 
@@ -118,7 +121,6 @@ std::vector<double> PT::GetBetas() {
 }
 
 
-
 void PT::Adjustment(pcg32& main_eng) {
     if (reps.size() < 3) return;
     int i = RNG::uniform_int(main_eng)%(reps.size()-2) + 1;
@@ -137,6 +139,7 @@ void PT::Insertion(pcg32& main_eng) {
     double b_new = RNG::zero_one_double(main_eng) * (r-l) + l;
     int L = reps[0]->L;
     auto r_new = new IsingFerromagnetReplica(L, b_new);
+    r_new->Init(eng);
     reps.insert(reps.begin()+i, r_new);
     return;
 }

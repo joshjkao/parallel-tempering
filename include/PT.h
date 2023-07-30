@@ -1,5 +1,5 @@
 #pragma once
-#include "Replica.hh"
+#include "Replica.h"
 
 
 class PT {

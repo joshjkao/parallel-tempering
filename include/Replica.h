@@ -3,6 +3,7 @@
 #include <random>
 #include "pcg/pcg_random.hpp"
 
+
 class Replica {
     public:
         Replica() = default;
@@ -18,6 +19,7 @@ class Replica {
         int cost;
         double B;
 };
+
 
 class IsingFerromagnetReplica: public Replica {
     public:
@@ -41,6 +43,7 @@ class IsingFerromagnetReplica: public Replica {
         std::vector<int> Lincr;
         
 };
+
 
 int IsingFerromagnetReplica::arithmod(int i) {
     return (i + L) % L;
