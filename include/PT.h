@@ -4,6 +4,9 @@
 
 class PT {
     public:
+    
+    static double Expected_RT(const std::vector<double>& p);
+
     PT(int L, const std::vector<double>& B, unsigned int seed);
     PT(const PT& other);
     PT& operator=(const PT& rhs);
@@ -15,7 +18,6 @@ class PT {
     void Deletion(pcg32& main_eng);
 
     std::vector<double> Start(unsigned int n_sweeps);
-    static double Expected_RT(const std::vector<double>& p);
     std::vector<double> GetBetas();
 
     std::vector<IsingFerromagnetReplica*> reps;
