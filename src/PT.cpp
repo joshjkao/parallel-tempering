@@ -134,7 +134,7 @@ void PT::Adjustment(pcg32& main_eng) {
 
 void PT::Insertion(pcg32& main_eng) {
     int i = 1;
-    if (reps.size() > 2) i = RNG::uniform_int(main_eng)%(reps.size()-2) + 1;
+    if (reps.size() > 2) i = RNG::uniform_int(main_eng)%(reps.size()-1) + 1;
     double l = reps[i-1]->B;
     double r = reps[i]->B;
     double b_new = RNG::zero_one_double(main_eng) * (r-l) + l;
@@ -147,6 +147,10 @@ void PT::Insertion(pcg32& main_eng) {
 
 
 void PT::Deletion(pcg32& main_eng) {
+    if (reps.size() < 3) return;
+    int i = RNG::uniform_int(main_eng)%(reps.size()-2) + 1;
+    delete reps[i];
+    reps.erase(reps.begin()+i);
     return;
 }
     
