@@ -1,4 +1,4 @@
-#include "RNG.hh"
+#include "RNG.h"
 #include <random>
 
 std::uniform_int_distribution<int> RNG::zero_one_int(0,1);

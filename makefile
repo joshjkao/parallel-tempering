@@ -1,7 +1,7 @@
 SRC_DIR=src
 CXX=g++
 CXXFLAGS=-Wall -std=c++11 -O3 -fopenmp
-SRC_FILES=$(wildcard $(SRC_DIR)/*.cc) main.cc
+SRC_FILES=$(wildcard $(SRC_DIR)/*.cpp) main.cpp
 OBJ_NAME=run
 INCLUDE_PATHS=-I include
 

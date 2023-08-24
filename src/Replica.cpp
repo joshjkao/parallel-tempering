@@ -1,5 +1,5 @@
-#include "Replica.hh"
-#include "RNG.hh"
+#include "Replica.h"
+#include "RNG.h"
 #include "pcg/pcg_random.hpp"
 #include <random>
 #include <iostream>
@@ -8,8 +8,8 @@
 #include <climits>
 
 
-IsingFerromagnetReplica::IsingFerromagnetReplica(int L_, double B_, pcg32* gen_):
-Replica(), L(L_), gen(gen_)
+IsingFerromagnetReplica::IsingFerromagnetReplica(int L_, double B_):
+Replica(), L(L_)
 {
     lattice = std::vector< std::vector<int> >(L_, std::vector<int>(L_, 0));
     pick_order = std::vector<int>(L_*L_, 0);
@@ -17,14 +17,13 @@ Replica(), L(L_), gen(gen_)
     Lincr = std::vector<int>(L, 0);
     cost = 0;
     B = B_;
-    Init();
 }
 
 IsingFerromagnetReplica::~IsingFerromagnetReplica() {
 
 }
 
-void IsingFerromagnetReplica::Init() {
+void IsingFerromagnetReplica::Init(pcg32& eng) {
     for (unsigned int i = 0; i < L; ++i) {
         Lincr[i] = (i+1)%L;
         Ldecr[i] = arithmod(i-1);
@@ -33,7 +32,7 @@ void IsingFerromagnetReplica::Init() {
     unsigned int i = 0;
     for (auto& row: lattice) {
         for (auto& s: row) {
-            s = (RNG::zero_one_int(*gen) == 0) ? -1 : 1;
+            s = (RNG::zero_one_int(eng) == 0) ? -1 : 1;
             pick_order[i] = i;
             ++i;
         }
@@ -53,15 +52,14 @@ int IsingFerromagnetReplica::Cost() {
     return cost;
 }
 
-void IsingFerromagnetReplica::Update() {
+void IsingFerromagnetReplica::Update(pcg32& eng) {
 // Perform sweep to evolve replica
-    std::shuffle(pick_order.begin(), pick_order.end(), *gen);
+    std::shuffle(pick_order.begin(), pick_order.end(), eng);
     for (auto& x: pick_order) {
         int i = x/L;
         int j = x%L;
         int contr = (lattice)[i][j] * ((lattice)[i][Lincr[j]] + (lattice)[i][Ldecr[j]] + (lattice)[Ldecr[i]][j] + (lattice)[Lincr[i]][j]);
-        // double A = std::min(1., exp(-B * (2*contr)));
-        if (contr < 0. || RNG::zero_one_double(*gen) < exp(-B * 2*contr)) {
+        if (contr < 0. || RNG::zero_one_double(eng) < exp(-B * 2*contr)) {
             cost += 2*contr;
             (lattice)[i][j] *= -1;
         }
