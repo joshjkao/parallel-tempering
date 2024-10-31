@@ -1,6 +1,6 @@
 #include "Replica.h"
 #include "RNG.h"
-#include "pcg/pcg_random.hpp"
+//#include "pcg/pcg_random.hpp"
 #include <random>
 #include <iostream>
 #include <algorithm>
@@ -23,7 +23,7 @@ IsingFerromagnetReplica::~IsingFerromagnetReplica() {
 
 }
 
-void IsingFerromagnetReplica::Init(pcg32& eng) {
+void IsingFerromagnetReplica::Init(RNGEngine& eng) {
     for (unsigned int i = 0; i < L; ++i) {
         Lincr[i] = (i+1)%L;
         Ldecr[i] = arithmod(i-1);
@@ -52,7 +52,7 @@ int IsingFerromagnetReplica::Cost() {
     return cost;
 }
 
-void IsingFerromagnetReplica::Update(pcg32& eng) {
+void IsingFerromagnetReplica::Update(RNGEngine& eng) {
 // Perform sweep to evolve replica
     std::shuffle(pick_order.begin(), pick_order.end(), eng);
     for (auto& x: pick_order) {

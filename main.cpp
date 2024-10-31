@@ -1,7 +1,6 @@
 #include "Replica.h"
 #include "PT.h"
 #include "RNG.h"
-#include "pcg/pcg_random.hpp"
 #include "util.h"
 
 #include <iostream>
@@ -29,7 +28,7 @@ int main(int argc, char** argv) {
     int L = 10;
     if (argc < 2 || atoi(argv[1]) < 3) {
         cout << "error with command line args\n";
-        return 1;
+        //return 1;
     } else {
         L = atoi(argv[1]);
     }
@@ -53,7 +52,7 @@ void optimize(int L, vector<double> B, const char* filename) {
     cout << "starting optimization with B = " << B << "and L = " << L << endl;
 
     unsigned int seed = 0;
-    pcg32 main_eng(seed);          // SHARED, ALWAYS USED FOR TEMP SET UPDATES
+    RNGEngine main_eng(seed);          // SHARED, ALWAYS USED FOR TEMP SET UPDATES
 
     auto best_reps = PT(L, B, 1);  // PT OBJECTS CONTAIN THEIR OWN RNG ENGINE
                                    // COPY CONSTR. COPIES THE CURRENT STATE OF THE ENGINE

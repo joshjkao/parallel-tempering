@@ -1,7 +1,7 @@
 #pragma once
 #include <vector>
 #include <random>
-#include "pcg/pcg_random.hpp"
+#include "RNG.h"
 
 
 class Replica {
@@ -10,9 +10,9 @@ class Replica {
         Replica(const Replica& other) = default;
         virtual ~Replica() = default;
 
-        virtual void Init(pcg32& eng) = 0;
+        virtual void Init(RNGEngine& eng) = 0;
         virtual int Cost() = 0;
-        virtual void Update(pcg32& eng) = 0;
+        virtual void Update(RNGEngine& eng) = 0;
 
         virtual void Dump() {}
 
@@ -26,9 +26,9 @@ class IsingFerromagnetReplica: public Replica {
         IsingFerromagnetReplica(int L_, double B_);
         ~IsingFerromagnetReplica();
 
-        void Init(pcg32& eng);
+        void Init(RNGEngine& eng);
         int Cost();
-        void Update(pcg32& eng);
+        void Update(RNGEngine& eng);
 
         void Dump();
 

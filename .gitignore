@@ -11,3 +11,4 @@ testjob.job
 build
 jobs
 **.out
+.vs

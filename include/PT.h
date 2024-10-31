@@ -1,6 +1,7 @@
 #pragma once
 #include "Replica.h"
 
+typedef IsingFerromagnetReplica ReplicaType;
 
 class PT {
     public:
@@ -13,14 +14,14 @@ class PT {
 
         void Seed(unsigned int seed);
 
-        void Adjustment(pcg32& main_eng);
-        void Insertion(pcg32& main_eng);
-        void Deletion(pcg32& main_eng);
+        void Adjustment(RNGEngine& main_eng);
+        void Insertion(RNGEngine& main_eng);
+        void Deletion(RNGEngine& main_eng);
 
         std::vector<double> Start(unsigned int n_sweeps);
         std::vector<double> GetBetas();
         inline size_t size() {return reps.size();}
 
-        std::vector<IsingFerromagnetReplica*> reps;
-        pcg32 eng;
+        std::vector<ReplicaType*> reps;
+        RNGEngine eng;
 };

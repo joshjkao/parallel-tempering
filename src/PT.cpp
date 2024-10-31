@@ -1,7 +1,7 @@
 #include "PT.h"
 #include "util.h"
 #include "RNG.h"
-#include "pcg/pcg_random.hpp"
+//#include "pcg/pcg_random.hpp"
 
 #include <cmath>
 #include <climits>
@@ -15,7 +15,7 @@ PT::PT(int L, const std::vector<double>& B, unsigned int seed):
 eng(seed)
 {
     for (auto& b: B) {
-        reps.push_back(new IsingFerromagnetReplica(L, b));
+        reps.push_back(new ReplicaType(L, b));
     }
     for (auto& rep: reps) {
         rep->Init(eng);
@@ -23,21 +23,21 @@ eng(seed)
 }
 
 PT::PT(const PT& other) {
-    eng = pcg32(other.eng);
+    eng = RNGEngine(other.eng);
     for (auto& orep: other.reps) {
-        reps.push_back(new IsingFerromagnetReplica(*orep));
+        reps.push_back(new ReplicaType(*orep));
     }
 }
 
 
 PT& PT::operator=(const PT& rhs) {
-    eng = pcg32(rhs.eng);
+    eng = RNGEngine(rhs.eng);
     for (auto& r: reps) {
         delete r;
     }
     reps.clear();
     for (auto& orep: rhs.reps) {
-        reps.push_back(new IsingFerromagnetReplica(*orep));
+        reps.push_back(new ReplicaType(*orep));
     }
     return *this;
 }
@@ -120,7 +120,7 @@ std::vector<double> PT::GetBetas() {
 }
 
 
-void PT::Adjustment(pcg32& main_eng) {
+void PT::Adjustment(RNGEngine& main_eng) {
     if (reps.size() < 3) return;
     int i = RNG::uniform_int(main_eng)%(reps.size()-2) + 1;
     double l = reps[i-1]->B;
@@ -131,21 +131,21 @@ void PT::Adjustment(pcg32& main_eng) {
 }
 
 
-void PT::Insertion(pcg32& main_eng) {
+void PT::Insertion(RNGEngine& main_eng) {
     int i = 1;
     if (reps.size() > 2) i = RNG::uniform_int(main_eng)%(reps.size()-1) + 1;
     double l = reps[i-1]->B;
     double r = reps[i]->B;
     double b_new = RNG::zero_one_double(main_eng) * (r-l) + l;
     int L = reps[0]->L;
-    auto r_new = new IsingFerromagnetReplica(L, b_new);
+    auto r_new = new ReplicaType(L, b_new);
     r_new->Init(eng);
     reps.insert(reps.begin()+i, r_new);
     return;
 }
 
 
-void PT::Deletion(pcg32& main_eng) {
+void PT::Deletion(RNGEngine& main_eng) {
     if (reps.size() < 3) return;
     int i = RNG::uniform_int(main_eng)%(reps.size()-2) + 1;
     delete reps[i];
