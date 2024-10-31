@@ -58,13 +58,12 @@ void PT::Seed(unsigned int seed) {
 std::vector<double> PT::Start(unsigned int n_sweeps) {
     std::vector<unsigned int> count_acc(reps.size()-1, 0.);
     std::vector<double> p(reps.size()-1, 0.);
-    double rt = INFINITY;
+    long double rt = INFINITY;
 
     unsigned int min_sweeps = 10000;
     unsigned int step_size = 1000;
     unsigned int next_check = min_sweeps + step_size;
 
-    std::vector<double> mean_i(reps.size()-1, 0.);
     for (unsigned int i = 0; i < n_sweeps; ++i) {
         for (auto& rep: reps) {
             rep->Update(eng);
@@ -82,9 +81,9 @@ std::vector<double> PT::Start(unsigned int n_sweeps) {
 
         if (i == next_check) {
             for (unsigned int k = 0; k < p.size(); ++k) {
-                p[k] = (double)count_acc[k]/i;
+                p[k] = (long double)count_acc[k]/i;
             }
-            double rt_new = PT::Expected_RT(p);
+            long double rt_new = PT::Expected_RT(p);
             if ((rt-rt_new)/rt_new < 0.001 || (rt == INFINITY && rt_new == INFINITY)) {
                 return p;
             }
@@ -102,8 +101,8 @@ std::vector<double> PT::Start(unsigned int n_sweeps) {
 }
 
 
-double PT::Expected_RT(const std::vector<double>& p) {
-    double inv_sum = 0.;
+long double PT::Expected_RT(const std::vector<double>& p) {
+    long double inv_sum = 0.;
     int n = p.size()+1;
     for (auto& i: p) {
         inv_sum += 1./i;

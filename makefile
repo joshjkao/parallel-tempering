@@ -7,13 +7,10 @@ INCLUDE_PATHS=-I include
 
 
 all:
-	$(CXX) $(CXXFLAGS) $(INCLUDE_PATHS) -DUSE_MULTITHREADING $(SRC_FILES) -o $(OBJ_NAME)
+	$(CXX) $(CXXFLAGS) $(INCLUDE_PATHS) $(SRC_FILES) -o $(OBJ_NAME)
 
 debug:
 	$(CXX) -Wall -g -fopenmp $(INCLUDE_PATHS) $(SRC_FILES) -o $(OBJ_NAME)
-
-serial:
-	$(CXX) $(CXXFLAGS) $(INCLUDE_PATHS) $(SRC_FILES) -o $(OBJ_NAME)
 
 clean:
 	rm -f $(OBJ)

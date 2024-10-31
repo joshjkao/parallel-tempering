@@ -5,4 +5,9 @@ test
 output.csv
 processing.ipynb
 **/**.txt
+!CMakeLists.txt
 **/**.bat
+testjob.job
+build
+jobs
+**.out
