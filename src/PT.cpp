@@ -1,7 +1,6 @@
 #include "PT.h"
 #include "util.h"
 #include "RNG.h"
-//#include "pcg/pcg_random.hpp"
 
 #include <cmath>
 #include <climits>

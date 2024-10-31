@@ -21,11 +21,13 @@ using namespace std::chrono;
 
 void optimize(int L, vector<double> B, const char* filename);
 
+void test(int L, vector<double> B);
+
 
 int main(int argc, char** argv) {
 
     // parse cmd line arguments
-    int L = 10;
+    int L = 20;
     if (argc < 2 || atoi(argv[1]) < 3) {
         cout << "error with command line args\n";
         //return 1;
@@ -39,7 +41,9 @@ int main(int argc, char** argv) {
     // perform optimization
     // vector<double> B = {10, .1};
     vector<double> B = {10,0.662364,0.538213,0.48103,0.434498,0.396992,0.340488,0.268908,0.190814,0.1};
-    optimize(L, B, "output20.txt");
+    //optimize(L, B, "output20.txt");
+
+    test(L, B);
 
     // stop the timer
     auto end = high_resolution_clock::now();
@@ -141,4 +145,36 @@ void optimize(int L, vector<double> B, const char* filename) {
     }
     ofile << best_reps.GetBetas();
     ofile.close();
+}
+
+void test(int L, vector<double> B) {
+    cout << "starting a test with B = " << B << "and L = " << L << endl;
+
+    unsigned int seed = 0;
+    RNGEngine main_eng(seed);          // SHARED, ALWAYS USED FOR TEMP SET UPDATES
+    unsigned int nupdates = 1;
+
+    auto best_reps = PT(L, B, 1);  // PT OBJECTS CONTAIN THEIR OWN RNG ENGINE
+    // COPY CONSTR. COPIES THE CURRENT STATE OF THE ENGINE
+
+    auto local_reps = best_reps;
+
+    // COPY OF local_reps IS INITIALIZED FOR EACH THREAD
+#pragma omp parallel for firstprivate(local_reps) num_threads(2)
+    for (int j = 0; j < nupdates; ++j) {
+#pragma omp critical 
+        {
+            // CRITICAL: READ CURRENT BEST SET
+            local_reps = best_reps;
+            local_reps.Adjustment(main_eng);
+        }
+        // PARALLEL SECTION
+        auto p_new = local_reps.Start(1e8);
+        auto tau_new = PT::Expected_RT(p_new);
+#pragma omp critical
+        {
+            // CRITICAL: 
+            cout << "finished run " << j << endl;
+        }
+    }
 }
