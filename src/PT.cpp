@@ -14,39 +14,40 @@ PT::PT(int L, const std::vector<double>& B, unsigned int seed):
 eng(seed)
 {
     for (auto& b: B) {
-        reps.push_back(new ReplicaType(L, b));
+        // reps.push_back(new ReplicaType(L, b));
+        reps.emplace_back(ReplicaType(L, b));
     }
     for (auto& rep: reps) {
-        rep->Init(eng);
+        rep.Init(eng);
     }
 }
 
-PT::PT(const PT& other) {
-    eng = RNGEngine(other.eng);
-    for (auto& orep: other.reps) {
-        reps.push_back(new ReplicaType(*orep));
-    }
-}
+// PT::PT(const PT& other) {
+//     eng = RNGEngine(other.eng);
+//     for (auto& orep: other.reps) {
+//         reps.push_back(new ReplicaType(*orep));
+//     }
+// }
 
 
-PT& PT::operator=(const PT& rhs) {
-    eng = RNGEngine(rhs.eng);
-    for (auto& r: reps) {
-        delete r;
-    }
-    reps.clear();
-    for (auto& orep: rhs.reps) {
-        reps.push_back(new ReplicaType(*orep));
-    }
-    return *this;
-}
+// PT& PT::operator=(const PT& rhs) {
+//     eng = RNGEngine(rhs.eng);
+//     for (auto& r: reps) {
+//         delete r;
+//     }
+//     reps.clear();
+//     for (auto& orep: rhs.reps) {
+//         reps.push_back(new ReplicaType(*orep));
+//     }
+//     return *this;
+// }
 
 
-PT::~PT() {
-    for (auto& rep: reps) {
-        delete rep;
-    }
-}
+// PT::~PT() {
+//     for (auto& rep: reps) {
+//         delete rep;
+//     }
+// }
 
 
 void PT::Seed(unsigned int seed) {
@@ -65,15 +66,15 @@ std::vector<double> PT::Start(unsigned int n_sweeps) {
 
     for (unsigned int i = 0; i < n_sweeps; ++i) {
         for (auto& rep: reps) {
-            rep->Update(eng);
+            rep.Update(eng);
         }
 
         for (unsigned int j = 0; j < reps.size()-1; ++j) {
-            double dB = reps[j+1]->B - reps[j]->B;
-            double dE = reps[j+1]->cost - reps[j]->cost;
+            double dB = reps[j+1].B - reps[j].B;
+            double dE = reps[j+1].cost - reps[j].cost;
             if (dB*dE > 0. || RNG::zero_one_double(eng) < exp(dB*dE)) {
                 std::swap(reps[j], reps[j+1]);
-                std::swap(reps[j]->B, reps[j+1]->B);
+                std::swap(reps[j].B, reps[j+1].B);
                 ++count_acc[j];
             }
         }
@@ -113,7 +114,7 @@ long double PT::Expected_RT(const std::vector<double>& p) {
 std::vector<double> PT::GetBetas() {
     std::vector<double> ret;
     for (auto& r: reps) {
-        ret.push_back(r->B);
+        ret.push_back(r.B);
     }
     return ret;
 }
@@ -122,10 +123,10 @@ std::vector<double> PT::GetBetas() {
 void PT::Adjustment(RNGEngine& main_eng) {
     if (reps.size() < 3) return;
     int i = RNG::uniform_int(main_eng)%(reps.size()-2) + 1;
-    double l = reps[i-1]->B;
-    double r = reps[i+1]->B;
+    double l = reps[i-1].B;
+    double r = reps[i+1].B;
     double b_new = RNG::zero_one_double(main_eng) * (r-l) + l;
-    reps[i]->B = b_new;
+    reps[i].B = b_new;
     return;
 }
 
@@ -133,12 +134,12 @@ void PT::Adjustment(RNGEngine& main_eng) {
 void PT::Insertion(RNGEngine& main_eng) {
     int i = 1;
     if (reps.size() > 2) i = RNG::uniform_int(main_eng)%(reps.size()-1) + 1;
-    double l = reps[i-1]->B;
-    double r = reps[i]->B;
+    double l = reps[i-1].B;
+    double r = reps[i].B;
     double b_new = RNG::zero_one_double(main_eng) * (r-l) + l;
-    int L = reps[0]->L;
-    auto r_new = new ReplicaType(L, b_new);
-    r_new->Init(eng);
+    int L = reps[0].L;
+    auto r_new = ReplicaType(L, b_new);
+    r_new.Init(eng);
     reps.insert(reps.begin()+i, r_new);
     return;
 }
@@ -147,7 +148,7 @@ void PT::Insertion(RNGEngine& main_eng) {
 void PT::Deletion(RNGEngine& main_eng) {
     if (reps.size() < 3) return;
     int i = RNG::uniform_int(main_eng)%(reps.size()-2) + 1;
-    delete reps[i];
+    // delete reps[i];
     reps.erase(reps.begin()+i);
     return;
 }

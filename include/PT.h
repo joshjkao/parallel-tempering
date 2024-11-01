@@ -8,9 +8,9 @@ class PT {
         static long double Expected_RT(const std::vector<double>& p);
 
         PT(int L, const std::vector<double>& B, unsigned int seed);
-        PT(const PT& other);
-        PT& operator=(const PT& rhs);
-        ~PT();
+        // PT(const PT& other);
+        // PT& operator=(const PT& rhs);
+        // ~PT();
 
         void Seed(unsigned int seed);
 
@@ -22,6 +22,6 @@ class PT {
         std::vector<double> GetBetas();
         inline size_t size() {return reps.size();}
 
-        std::vector<ReplicaType*> reps;
+        std::vector<ReplicaType> reps;
         RNGEngine eng;
 };
