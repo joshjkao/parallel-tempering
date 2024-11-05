@@ -8,7 +8,7 @@
 #include <chrono>
 #include <fstream>
 #include <float.h>
-#include <omp.h>
+// #include <omp.h>
 
 
 std::ostream& operator<<(std::ostream& os, const std::vector<double>& v);
