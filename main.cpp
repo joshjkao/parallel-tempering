@@ -40,6 +40,10 @@ int main(int argc, char** argv) {
 
     // perform optimization
     vector<double> B = {10, .1};
+//     optimize(L, B, "output20.txt");
+
+    // vector<double> B = {10,0.662364,0.538213,0.48103,0.434498,0.396992,0.340488,0.268908,0.190814,0.1};
+    // test(L, B);
     // vector<double> B = {10,0.662364,0.538213,0.48103,0.434498,0.396992,0.340488,0.268908,0.190814,0.1};
     //optimize(L, B, "output20.txt");
 
