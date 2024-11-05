@@ -11,14 +11,14 @@
 #include <chrono>
 #include <fstream>
 #include <float.h>
-#include <omp.h>
+// #include <omp.h>
 #include <algorithm>
 #include <string>
 
 using namespace std;
 using namespace std::chrono;
 
-
+void original_optimize(int L, vector<double> B, const char* filename);
 void optimize(int L, vector<double> B, const char* filename);
 
 void test(int L, vector<double> B);
@@ -40,10 +40,16 @@ int main(int argc, char** argv) {
 
     // perform optimization
     vector<double> B = {10, .1};
-    optimize(L, B, "output20.txt");
+//     optimize(L, B, "output20.txt");
 
     // vector<double> B = {10,0.662364,0.538213,0.48103,0.434498,0.396992,0.340488,0.268908,0.190814,0.1};
     // test(L, B);
+    // vector<double> B = {10,0.662364,0.538213,0.48103,0.434498,0.396992,0.340488,0.268908,0.190814,0.1};
+    //optimize(L, B, "output20.txt");
+
+    // test(L, B);
+
+    original_optimize(L, B, "");
 
     // stop the timer
     auto end = high_resolution_clock::now();
@@ -51,6 +57,67 @@ int main(int argc, char** argv) {
     cout << "\nexecution time: " << duration.count()/1e6 << " s\n";
 }
 
+void original_optimize(int L, vector<double> B, const char* filename) {
+    cout << "starting original optimization algorithm with B = " << B << "and L = " << L << endl;
+
+    unsigned int seed = 0;
+    RNGEngine main_eng(seed);
+
+    auto best_reps = PT(L, B, 1);
+
+    cout << "burn in" << endl;
+    auto p = best_reps.Start(1e5);
+
+    auto best_tau = PT::Expected_RT(p);
+    cout << "the initial round trip time is " << best_tau << endl;
+
+    for (int i = 0; i < 30; ++i) {
+        auto new_reps = best_reps;
+
+        cout << "attempt an insertion/deletion" << endl;
+        if (new_reps.size() > 2) {
+            if (RNG::zero_one_int(main_eng) == 0) {
+                new_reps.Insertion(main_eng);
+                cout << "performed an insertion" << endl;
+            } else {
+                new_reps.Deletion(main_eng);
+                cout << "performed a deletion" << endl;
+            }
+        } else {
+            new_reps.Insertion(main_eng);
+            cout << "performed an insertion" << endl;
+        }
+
+        auto p_new = new_reps.Start(1e5);
+        auto tau_new = PT::Expected_RT(p_new);
+        cout << "the new round trip time is " << tau_new << endl;
+
+        if (tau_new < best_tau) {
+            best_reps = new_reps;
+            best_tau = tau_new;
+            cout << "the best round trip time is now " << best_tau << endl;
+        } else {
+            new_reps = best_reps;
+            cout << "the best round trip time is still " << best_tau << endl;
+        }
+
+        cout << "attempting an adjustment" << endl;
+        new_reps.Adjustment(main_eng);
+
+        p_new = new_reps.Start(1e5);
+        tau_new = PT::Expected_RT(p_new);
+
+        if (tau_new < best_tau) {
+            best_reps = new_reps;
+            best_tau = tau_new;
+            cout << "the best round trip time is now " << best_tau << endl;
+        } else {
+            cout << "the best round trip time is still " << best_tau << endl;
+        }
+    }
+
+    cout << "the best round trip time was " << best_tau << endl;
+}
 
 void optimize(int L, vector<double> B, const char* filename) {
     cout << "starting optimization with B = " << B << "and L = " << L << endl;
