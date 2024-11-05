@@ -27,24 +27,32 @@ void test(int L, vector<double> B);
 int main(int argc, char** argv) {
 
     // parse cmd line arguments
-    int L = 20;
-    if (argc < 2 || atoi(argv[1]) < 3) {
-        cout << "error with command line args\n";
-        //return 1;
-    } else {
-        L = atoi(argv[1]);
-    }
+    int L = 7;
+    // if (argc < 2 || atoi(argv[1]) < 3) {
+    //     cout << "error with command line args\n";
+    //     //return 1;
+    // } else {
+    //     L = atoi(argv[1]);
+    // }
 
     // start the timer
     auto start = high_resolution_clock::now();
 
     // perform optimization
-    vector<double> B = {10, .1};
-//     optimize(L, B, "output20.txt");
+    //vector<double> B = {10, .1};
+    //optimize(L, B, "output20.txt");
 
     // vector<double> B = {10,0.662364,0.538213,0.48103,0.434498,0.396992,0.340488,0.268908,0.190814,0.1};
     // test(L, B);
-    // vector<double> B = {10,0.662364,0.538213,0.48103,0.434498,0.396992,0.340488,0.268908,0.190814,0.1};
+    //vector<double> B = {10,0.662364,0.538213,0.48103,0.434498,0.396992,0.340488,0.268908,0.190814,0.1};
+    vector<double> B(10, 0);
+    B[0] = 10;
+    B[B.size() - 1] = 0.1;
+    double range = B[0] - B[B.size()-1];
+    double step = range / (B.size() - 1);
+    for (int i = 1; i < B.size()-1; ++i) {
+        B[i] = B[i - 1] - step;
+    }
     //optimize(L, B, "output20.txt");
 
     // test(L, B);
@@ -71,52 +79,36 @@ void original_optimize(int L, vector<double> B, const char* filename) {
     auto best_tau = PT::Expected_RT(p);
     cout << "the initial round trip time is " << best_tau << endl;
 
-    for (int i = 0; i < 30; ++i) {
-        auto new_reps = best_reps;
-
-        cout << "attempt an insertion/deletion" << endl;
-        if (new_reps.size() > 2) {
-            if (RNG::zero_one_int(main_eng) == 0) {
-                new_reps.Insertion(main_eng);
-                cout << "performed an insertion" << endl;
-            } else {
-                new_reps.Deletion(main_eng);
-                cout << "performed a deletion" << endl;
-            }
-        } else {
-            new_reps.Insertion(main_eng);
-            cout << "performed an insertion" << endl;
+    auto new_reps = best_reps;
+#pragma omp parallel for firstprivate(new_reps)
+    for (int i = 0; i < 20000; ++i) {
+#pragma omp critical
+        {
+            new_reps = best_reps;
+            //cout << "attempting an adjustment " << i << endl;
+            new_reps.Adjustment(main_eng);
+            //cout << "the new temperature set is " << new_reps.GetBetas() << endl;
         }
 
         auto p_new = new_reps.Start(1e5);
         auto tau_new = PT::Expected_RT(p_new);
-        cout << "the new round trip time is " << tau_new << endl;
 
-        if (tau_new < best_tau) {
-            best_reps = new_reps;
-            best_tau = tau_new;
-            cout << "the best round trip time is now " << best_tau << endl;
-        } else {
-            new_reps = best_reps;
-            cout << "the best round trip time is still " << best_tau << endl;
-        }
-
-        cout << "attempting an adjustment" << endl;
-        new_reps.Adjustment(main_eng);
-
-        p_new = new_reps.Start(1e5);
-        tau_new = PT::Expected_RT(p_new);
-
-        if (tau_new < best_tau) {
-            best_reps = new_reps;
-            best_tau = tau_new;
-            cout << "the best round trip time is now " << best_tau << endl;
-        } else {
-            cout << "the best round trip time is still " << best_tau << endl;
+#pragma omp critical
+        {
+            //cout << "the new round trip time is " << tau_new << endl;
+            if (tau_new < best_tau || best_tau == INFINITY) {
+                best_reps = new_reps;
+                best_tau = tau_new;
+                cout << "the best round trip time is now " << best_tau << endl;
+            }
+            else {
+                //cout << "the best round trip time is still " << best_tau << endl;
+            }
         }
     }
 
     cout << "the best round trip time was " << best_tau << endl;
+    cout << "the best temperature set was " << best_reps.GetBetas() << endl;
 }
 
 void optimize(int L, vector<double> B, const char* filename) {
