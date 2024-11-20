@@ -22,33 +22,6 @@ eng(seed)
     }
 }
 
-// PT::PT(const PT& other) {
-//     eng = RNGEngine(other.eng);
-//     for (auto& orep: other.reps) {
-//         reps.push_back(new ReplicaType(*orep));
-//     }
-// }
-
-
-// PT& PT::operator=(const PT& rhs) {
-//     eng = RNGEngine(rhs.eng);
-//     for (auto& r: reps) {
-//         delete r;
-//     }
-//     reps.clear();
-//     for (auto& orep: rhs.reps) {
-//         reps.push_back(new ReplicaType(*orep));
-//     }
-//     return *this;
-// }
-
-
-// PT::~PT() {
-//     for (auto& rep: reps) {
-//         delete rep;
-//     }
-// }
-
 
 void PT::Seed(unsigned int seed) {
     eng.seed(seed);
@@ -58,15 +31,26 @@ void PT::Seed(unsigned int seed) {
 std::vector<double> PT::Start(unsigned int n_sweeps) {
     std::vector<unsigned int> count_acc(reps.size()-1, 0.);
     std::vector<double> p(reps.size()-1, 0.);
+    h_up = std::vector<unsigned int>(reps.size(), 0);
+    h_down = std::vector<unsigned int>(reps.size(), 0);
     long double rt = INFINITY;
 
-    unsigned int min_sweeps = 10000;
-    unsigned int step_size = 1000;
+    //unsigned int min_sweeps = 10000;
+    unsigned int min_sweeps = 1e5;
+    unsigned int step_size = 10000;
     unsigned int next_check = min_sweeps + step_size;
 
     for (unsigned int i = 0; i < n_sweeps; ++i) {
         for (auto& rep: reps) {
             rep.Update(eng);
+        }
+
+        reps[0].direction = 1;
+        reps[reps.size()-1].direction = -1;
+
+        for (unsigned int j = 0; j < reps.size(); ++j) {
+            if (reps[j].direction == 1) h_up[j]++;
+            else if (reps[j].direction == -1) h_down[j]++;
         }
 
         for (unsigned int j = 0; j < reps.size()-1; ++j) {
@@ -80,14 +64,22 @@ std::vector<double> PT::Start(unsigned int n_sweeps) {
         }
 
         if (i == next_check) {
+            auto temp = p;
+            bool stop = true;
             for (unsigned int k = 0; k < p.size(); ++k) {
-                p[k] = (long double)count_acc[k]/i;
+                p[k] = (long double)count_acc[k]/(i+1);
             }
-            long double rt_new = PT::Expected_RT(p);
-            if ((rt-rt_new)/rt_new < 0.001 || (rt == INFINITY && rt_new == INFINITY)) {
+            for (unsigned int k = 0; k < p.size(); ++k) {
+                if ((1./p[k] - 1./temp[k])/(1./p[k]) > 0.0001) stop = false;
+            }
+            if (stop) {
                 return p;
             }
-            rt = rt_new;
+            // long double rt_new = PT::Expected_RT(p);
+            // if ((rt-rt_new)/rt_new < 0.00001 || (rt == INFINITY && rt_new == INFINITY)) {
+            //     return p;
+            // }
+            // rt = rt_new;
             step_size = step_size*2;
             next_check = min_sweeps + step_size;
         }

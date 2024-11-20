@@ -12,22 +12,6 @@
 #include <string>
 
 
-std::ostream& operator<<(std::ostream& os, const std::vector<double>& v) {
-    for (auto& x: v) {
-        os << x << ",";
-    }
-    os << std::endl;
-    return os;
-}
-
-std::ostream& operator<<(std::ostream& os, const std::vector<int>& v) {
-    for (auto& x: v) {
-        os << x << ",";
-    }
-    os << std::endl;
-    return os;
-}
-
 std::vector<double> divide(const std::vector<double>& v, double d) {
     std::vector<double> ret;
     for (auto& i: v) {

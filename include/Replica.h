@@ -3,7 +3,6 @@
 #include <random>
 #include "RNG.h"
 
-
 class Replica {
     public:
         Replica() = default;
@@ -18,6 +17,9 @@ class Replica {
 
         int cost;
         double B;
+
+        // 1, -1 up down
+        char direction;
 };
 
 

@@ -16,6 +16,7 @@ Replica(), L(L_)
     Lincr = std::vector<int>(L, 0);
     cost = 0;
     B = B_;
+    direction = 0;
 }
 
 IsingFerromagnetReplica::~IsingFerromagnetReplica() {
